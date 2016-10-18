@@ -5,6 +5,14 @@ period of time and prepare for plotting on a map with R
 import requests, bs4, datetime
 
 currentYear = datetime.datetime.now().year
+propertyTypes = ['villa','ejerlejlighed']
+
+def getPrices(firstYear, lastYear, propType):
+    resPropNo = requests.get('http://www.boliga.dk/salg/resultater?so=1&type=' + propType + '&fraPostnr=1000&tilPostnr=9990&minsaledate=' + firstYear + '&maxsaledate=' + lastYear)
+    resPropNo.raise_for_status()
+
+    propNoSoup = bs4.BeautifulSoup(resPropNo.text)
+    propNo = propNoSoup.select('td[class="text-center"] > label')[0].getText()
 
 while True:
     try:
