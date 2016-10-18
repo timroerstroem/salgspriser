@@ -2,6 +2,8 @@
 period of time and prepare for plotting on a map with R
 """
 
+# It is possible that the module 'vincent' could do the plotting
+
 import requests, bs4, datetime
 
 currentYear = datetime.datetime.now().year
