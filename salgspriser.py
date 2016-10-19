@@ -4,17 +4,38 @@ period of time and prepare for plotting on a map with R
 
 # It is possible that the module 'vincent' could do the plotting
 
-import requests, bs4, datetime
+import requests, bs4, datetime, math
 
 currentYear = datetime.datetime.now().year
 propertyTypes = ['villa','ejerlejlighed']
 
-def getPrices(firstYear, lastYear, propType):
+def numPages(firstYear, lastYear, propType):
+    """ Find the number of pages we have to iterate through to get all the results we want.
+    Each page contains 40 results.
+    """
+    # Get the page and check the result is good
     resPropNo = requests.get('http://www.boliga.dk/salg/resultater?so=1&type=' + propType + '&fraPostnr=1000&tilPostnr=9990&minsaledate=' + firstYear + '&maxsaledate=' + lastYear)
     resPropNo.raise_for_status()
 
-    propNoSoup = bs4.BeautifulSoup(resPropNo.text)
-    propNo = propNoSoup.select('td[class="text-center"] > label')[0].getText()
+    # Parse the result
+    propNoSoup = bs4.BeautifulSoup(resPropNo.text, 'html.parser')
+
+    # Extract the total number of results from the text above the results table
+    propNoArr = propNoSoup.select('td[class="text-center"] > label')[0].getText().split()
+    for i in range(len(propNoArr)):
+        try:
+            # Is the element a number?
+            int(propNoArr[i])
+        except ValueError:
+            # Not a number, next element
+            continue
+        # The only element that is a number is the total number of results
+        propNo = propNoArr[i]
+
+    # Return value is the number of pages with 40 results per page
+    pageNo = math.ceil(propNo, 40)
+
+    return pageNo
 
 while True:
     try:
