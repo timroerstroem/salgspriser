@@ -1,27 +1,38 @@
-""" Find sales prices of various (or all?) types of properties sold in a given
-period of time and prepare for plotting on a map with R
+# -*- coding: utf-8 -*-
+"""Find sales prices of various types of properties sold in a given
+period of time and prepare for plotting on a map with R.
 """
 
 # It is possible that the module 'vincent' could do the plotting
 
-import requests, bs4, datetime, math
+import requests
+import bs4
+import datetime
+import math
 
 currentYear = datetime.datetime.now().year
-propertyTypes = ['villa','ejerlejlighed']
+propertyTypes = ['villa', 'ejerlejlighed']
+
 
 def numPages(firstYear, lastYear, propType):
-    """ Find the number of pages we have to iterate through to get all the results we want.
+    """ Find the number of pages we have to iterate through to get all the
+    results we want.
     Each page contains 40 results.
     """
     # Get the page and check the result is good
-    resPropNo = requests.get('http://www.boliga.dk/salg/resultater?so=1&type=' + propType + '&fraPostnr=1000&tilPostnr=9990&minsaledate=' + firstYear + '&maxsaledate=' + lastYear)
+    resPropNo = requests.get('http://www.boliga.dk/salg/resultater?so=1&type='
+                             + propType +
+                             '&fraPostnr=1000&tilPostnr=9990&minsaledate=' +
+                             firstYear + '&maxsaledate=' + lastYear)
     resPropNo.raise_for_status()
 
     # Parse the result
     propNoSoup = bs4.BeautifulSoup(resPropNo.text, 'html.parser')
 
     # Extract the total number of results from the text above the results table
-    propNoArr = propNoSoup.select('td[class="text-center"] > label')[0].getText().split()
+    propNoArr = propNoSoup.select('td[class="text-center"] > label'
+                                  )[0].getText().split()
+
     for i in range(len(propNoArr)):
         try:
             # Is the element a number?
@@ -39,7 +50,8 @@ def numPages(firstYear, lastYear, propType):
 
 while True:
     try:
-        startYear = int(input("Starting year: ")) # Should probably default to the current year
+        # We should probably default to the current year
+        startYear = int(input("Starting year: "))
     except ValueError:
         # User did not enter a valid year
         print("Please enter a year between 1992 and " + str(currentYear) + ".")
@@ -68,10 +80,12 @@ else:
             int(endYear)
         except ValueError:
             # Not an integer, back to start
-            print("Please enter a year between " + str(startYear+1) + " and " + currentYear + ".")
+            print("Please enter a year between " + str(startYear+1) + " and "
+                  + currentYear + ".")
             continue
         if int(endYear) <= startYear:
-            print("End year must be greater than starting year (" + str(startYear) + ").")
+            print("End year must be greater than starting year (" +
+                  str(startYear) + ").")
             continue
         elif int(endYear) > currentYear:
             # Assume user wants all data until today
@@ -83,4 +97,5 @@ else:
             break
 
 # Preliminary output to validate the above
-print("This program should fetch prices from " + str(startYear) + " until " + str(endYear) + ".")
+print("This program should fetch prices from " + str(startYear) + " until " +
+      str(endYear) + ".")
