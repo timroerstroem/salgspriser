@@ -16,8 +16,8 @@ propertyTypes = ['villa', 'ejerlejlighed']
 
 def numPages(firstYear, lastYear, propType):
     """ Find the number of pages we have to iterate through to get all the
-    results we want.
-    Each page contains 40 results.
+    results we want. Each page contains 40 results; this should probably be
+    verified by looking at the text.
     """
     # Get the page and check the result is good
     resPropNo = requests.get('http://www.boliga.dk/salg/resultater?so=1&type='
@@ -47,6 +47,13 @@ def numPages(firstYear, lastYear, propType):
     pageNo = math.ceil(propNo, 40)
 
     return pageNo
+
+
+def getPrices(firstYear, lastYear, propType):
+    """ Get the prices of the given property type for the given years. Also
+    extract the addresses, we will use these to find the geographic
+    coordinates of the properties later.
+    """
 
 while True:
     try:
