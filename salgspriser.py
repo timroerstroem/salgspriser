@@ -20,10 +20,10 @@ def numPages(firstYear, lastYear, propType):
     verified by looking at the text.
     """
     # Get the page and check the result is good
-    resPropNo = requests.get('http://www.boliga.dk/salg/resultater?so=1&type='
-                             + propType +
-                             '&fraPostnr=1000&tilPostnr=9990&minsaledate=' +
-                             firstYear + '&maxsaledate=' + lastYear)
+    propURL = str('http://www.boliga.dk/salg/resultater?so=1&type=' +
+                  propType + '&fraPostnr=1000&tilPostnr=9990&minsaledate=' +
+                  firstYear + '&maxsaledate=' + lastYear)
+    resPropNo = requests.get(propURL)
     resPropNo.raise_for_status()
 
     # Parse the result
@@ -54,6 +54,31 @@ def getPrices(firstYear, lastYear, propType):
     extract the addresses, we will use these to find the geographic
     coordinates of the properties later.
     """
+    pages = numPages(firstYear, lastYear, propType)
+
+    # The generic URL without page number
+    genURL = str('http://www.boliga.dk/salg/resultater?so=1&type=' + propType +
+                 '&kom=&fraPostnr=1000&tilPostnr=9990&minsaledate=' +
+                 firstYear + '&maxsaledate=' + lastYear + '&p=')
+
+    # The stop-value for range() is one higher than the last returned value
+    for i in range(1, pages + 1):
+        # Get each page and check for errors
+        resProp = requests.get(genURL + i)
+        resProp.raise_for_status()
+
+        # Make soup
+        propSoup = bs4.BeautifulSoup(resProp.text, 'html.parser')
+
+        # The site doesn't use <tbody>, <tr> is directly inside <table>
+        rows = propSoup.select('#searchresult > tr')
+
+        # Find address and price per m^2 for each row
+        for j in range(40):
+            address = str(rows[j].a.contents[0] + ' ' + rows[j].a.contents[2])
+            price = float(rows[j].select('td')[3].getText().replace('.', ''))
+
+            # Assign the values to a data frame
 
 while True:
     try:
@@ -87,8 +112,8 @@ else:
             int(endYear)
         except ValueError:
             # Not an integer, back to start
-            print("Please enter a year between " + str(startYear+1) + " and "
-                  + currentYear + ".")
+            print("Please enter a year between " + str(startYear+1) + " and " +
+                  currentYear + ".")
             continue
         if int(endYear) <= startYear:
             print("End year must be greater than starting year (" +
