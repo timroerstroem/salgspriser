@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 """Find sales prices of various types of properties sold in a given
 period of time and prepare for plotting on a map with R.
+
+The resulting images must include the following notice:
+
+    Contains information from the MapQuest Open Platform Web Services (
+    http://open.mapquestapi.com/nominatim/), which is made available
+    here under the Open Database License (ODbL
+    http://opendatacommons.org/licenses/odbl/1.0/).
 """
 
 # It is possible that the module 'vincent' could do the plotting
@@ -9,9 +16,11 @@ import requests
 import bs4
 import datetime
 import math
+import geopy
 
 currentYear = datetime.datetime.now().year
 propertyTypes = ['villa', 'ejerlejlighed']
+geolocator = geopy.geocoders.Nominatim(domain='192.168.56.1')
 
 
 def numPages(firstYear, lastYear, propType):
@@ -19,6 +28,7 @@ def numPages(firstYear, lastYear, propType):
     results we want. Each page contains 40 results; this should probably be
     verified by looking at the text.
     """
+
     # Get the page and check the result is good
     propURL = str('http://www.boliga.dk/salg/resultater?so=1&type=' +
                   propType + '&fraPostnr=1000&tilPostnr=9990&minsaledate=' +
@@ -78,11 +88,14 @@ def getPrices(firstYear, lastYear, propType):
         for j in range(40):
             address = str(rows[j].a.contents[0] + ' ' + rows[j].a.contents[2])
             price = float(rows[j].select('td')[3].getText().replace('.', ''))
+            # Find coordinates for the address
 
-            # Assign the values to a dictionary
+            # Assign the values to the props dictionary
             props['address'].append(address)
             props['price'].append(price)
 
+""" Get input from user and run the program.
+"""
 while True:
     try:
         # We should probably default to the current year
