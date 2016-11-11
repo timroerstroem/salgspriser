@@ -55,6 +55,7 @@ def getPrices(firstYear, lastYear, propType):
     coordinates of the properties later.
     """
     pages = numPages(firstYear, lastYear, propType)
+    props = {'address': [], 'price': [], 'coords': []}
 
     # The generic URL without page number
     genURL = str('http://www.boliga.dk/salg/resultater?so=1&type=' + propType +
@@ -78,7 +79,9 @@ def getPrices(firstYear, lastYear, propType):
             address = str(rows[j].a.contents[0] + ' ' + rows[j].a.contents[2])
             price = float(rows[j].select('td')[3].getText().replace('.', ''))
 
-            # Assign the values to a data frame
+            # Assign the values to a dictionary
+            props['address'].append(address)
+            props['price'].append(price)
 
 while True:
     try:
