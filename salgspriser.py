@@ -3,11 +3,7 @@
 period of time and prepare for plotting on a map with R.
 """
 
-""" Example URL
-http://services.kortforsyningen.dk/?servicename=RestGeokeys_v2&method=adresse&vejnavn=Grundtvigs+Alle&husnr=7&postnr=6700&hits=50&geometry=true&login=timroerstroem&password=
-"""
-
-# Plotting should be done with Vega-Lite and Altail.
+# Plotting should be done with Vega-Lite and Altair.
 
 import requests
 import bs4
@@ -53,13 +49,34 @@ def numPages(firstYear, lastYear, propType):
     return pageNo
 
 
+def addrCoords(street, houseno, postcode):
+    """ Convert an address into a set of coordinates.
+    Look up the address at Kortforsyningen.
+    """
+    with open('passwd.cfg') as f:
+        credentials = [x.strip().split(':') for x in f.readlines()]
+
+    url = str('http://services.kortforsyningen.dk/?servicename=' +
+              'RestGeokeys_v2&method=adresse&vejnavn=' + street + '&husnr=' +
+              houseno + '&postnr=' + postcode + '&hits=1&geometry=true&f=xml' +
+              '&login=' + credentials[0] + '&password=' + credentials[1])
+    res = requests.get(url)
+    res.raise_for_status()
+    soup = bs4.BeautifulSoup(res.text, 'xml')
+
+    coords = soup.select('geometry')[0].getText().replace('POINT(', '')
+    coords = coords.replace(')', '').split()
+
+    return coords  # East is [0], North is [1]
+
+
 def getPrices(firstYear, lastYear, propType):
     """ Get the prices of the given property type for the given years. Also
     extract the addresses, we will use these to find the geographic
     coordinates of the properties later.
     """
     pages = numPages(firstYear, lastYear, propType)
-    props = {'address': [], 'price': [], 'coords': []}
+    props = {'address': [], 'price': [], 'coordNorth': [], 'coordEast': []}
 
     # The generic URL without page number
     genURL = str('http://www.boliga.dk/salg/resultater?so=1&type=' + propType +
@@ -83,9 +100,18 @@ def getPrices(firstYear, lastYear, propType):
             address = str(rows[j].a.contents[0] + ' ' + rows[j].a.contents[2])
             price = float(rows[j].select('td')[3].getText().replace('.', ''))
 
+            # Split the address
+            street = str(rows[j].a.contents[0]).rsplit(' ', 1)[0]
+            houseno = str(rows[j].a.contents[0]).rsplit(' ', 1)[1]
+            postcode = str(rows[j].a.contents[2]).split()[0]
+
+            coordinates = addrCoords(street, houseno, postcode)
+
             # Assign the values to a dictionary
             props['address'].append(address)
             props['price'].append(price)
+            props['coordNorth'].append(coordinates[0])
+            props['coordEast'].append(coordinates[1])
 
 while True:
     try:
