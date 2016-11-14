@@ -7,7 +7,7 @@ period of time and prepare for plotting on a map with R.
 http://services.kortforsyningen.dk/?servicename=RestGeokeys_v2&method=adresse&vejnavn=Grundtvigs+Alle&husnr=7&postnr=6700&hits=50&geometry=true&login=timroerstroem&password=
 """
 
-# It is possible that the module 'vincent' could do the plotting
+# Plotting should be done with Vega-Lite and Altail.
 
 import requests
 import bs4
