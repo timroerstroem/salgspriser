@@ -9,6 +9,8 @@ import requests
 import bs4
 import datetime
 import math
+import json
+import pygeoj
 
 currentYear = datetime.datetime.now().year
 propertyTypes = ['villa', 'ejerlejlighed']
@@ -58,16 +60,18 @@ def addrCoords(street, houseno, postcode):
 
     url = str('http://services.kortforsyningen.dk/?servicename=' +
               'RestGeokeys_v2&method=adresse&vejnavn=' + street + '&husnr=' +
-              houseno + '&postnr=' + postcode + '&hits=1&geometry=true&f=xml' +
-              '&login=' + credentials[0] + '&password=' + credentials[1])
+              houseno + '&postnr=' + postcode + '&hits=1&geometry=true' +
+              '&outgeoref=EPSG:4326&login=' + credentials[0] + '&password=' +
+              credentials[1])
     res = requests.get(url)
     res.raise_for_status()
-    soup = bs4.BeautifulSoup(res.text, 'xml')
 
-    coords = soup.select('geometry')[0].getText().replace('POINT(', '')
-    coords = coords.replace(')', '').split()
+    # There is a syntax error in the input geojson data
+    data = pygeoj.load(data=json.loads(res.text.replace('POINT', 'Point')))
 
-    return coords  # East is [0], North is [1]
+    coords = data[0].geometry.coordinates
+
+    return coords
 
 
 def getPrices(firstYear, lastYear, propType):
@@ -75,13 +79,16 @@ def getPrices(firstYear, lastYear, propType):
     extract the addresses, we will use these to find the geographic
     coordinates of the properties later.
     """
-    pages = numPages(firstYear, lastYear, propType)
+    # Placeholder
     props = {'address': [], 'price': [], 'coordNorth': [], 'coordEast': []}
+
+    # Get the number of pages
+    pages = numPages(firstYear, lastYear, propType)
 
     # The generic URL without page number
     genURL = str('http://www.boliga.dk/salg/resultater?so=1&type=' + propType +
-                 '&kom=&fraPostnr=1000&tilPostnr=9990&minsaledate=' +
-                 firstYear + '&maxsaledate=' + lastYear + '&p=')
+                 '&fraPostnr=1000&tilPostnr=9990&minsaledate=' + firstYear +
+                 '&maxsaledate=' + lastYear + '&p=')
 
     # The stop-value for range() is one higher than the last returned value
     for i in range(1, pages + 1):
@@ -97,7 +104,6 @@ def getPrices(firstYear, lastYear, propType):
 
         # Find address and price per m^2 for each row
         for j in range(40):
-            address = str(rows[j].a.contents[0] + ' ' + rows[j].a.contents[2])
             price = float(rows[j].select('td')[3].getText().replace('.', ''))
 
             # Split the address
@@ -108,10 +114,20 @@ def getPrices(firstYear, lastYear, propType):
             coordinates = addrCoords(street, houseno, postcode)
 
             # Assign the values to a dictionary
-            props['address'].append(address)
+            props['address'].append(str(street + ' ' + houseno + ' ' +
+                                    postcode))
             props['price'].append(price)
-            props['coordNorth'].append(coordinates[0])
-            props['coordEast'].append(coordinates[1])
+            props['coordNorth'].append(coordinates[1])
+            props['coordEast'].append(coordinates[0])
+
+    return props
+
+
+def avgPrices(prices):
+    """ Find the average price per square metre for properties inside areas of
+    a pre-defined size (1 km^2).
+    """
+
 
 while True:
     try:
