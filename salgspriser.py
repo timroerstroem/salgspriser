@@ -12,11 +12,11 @@ import math
 import json
 import pygeoj
 
-currentYear = datetime.datetime.now().year
-propertyTypes = ['villa', 'ejerlejlighed']
+CURRENT_YEAR = datetime.datetime.now().year
+PROPERTY_TYPES = ['villa', 'ejerlejlighed']
 
 
-def numPages(firstYear, lastYear, propType):
+def num_pages(firstYear, lastYear, propType):
     """ Find the number of pages we have to iterate through to get all the
     results we want. Each page contains 40 results; this should probably be
     verified by looking at the text.
@@ -51,7 +51,7 @@ def numPages(firstYear, lastYear, propType):
     return pageNo
 
 
-def addrCoords(street, houseno, postcode):
+def address_coords(street, houseno, postcode):
     """ Convert an address into a set of coordinates.
     Look up the address at Kortforsyningen.
     """
@@ -74,7 +74,7 @@ def addrCoords(street, houseno, postcode):
     return coords
 
 
-def getPrices(firstYear, lastYear, propType):
+def get_prices(firstYear, lastYear, propType):
     """ Get the prices of the given property type for the given years. Also
     extract the addresses, we will use these to find the geographic
     coordinates of the properties later.
@@ -83,7 +83,7 @@ def getPrices(firstYear, lastYear, propType):
     props = {'address': [], 'price': [], 'coordNorth': [], 'coordEast': []}
 
     # Get the number of pages
-    pages = numPages(firstYear, lastYear, propType)
+    pages = num_pages(firstYear, lastYear, propType)
 
     # The generic URL without page number
     genURL = str('http://www.boliga.dk/salg/resultater?so=1&type=' + propType +
@@ -111,7 +111,7 @@ def getPrices(firstYear, lastYear, propType):
             houseno = str(rows[j].a.contents[0]).rsplit(' ', 1)[1]
             postcode = str(rows[j].a.contents[2]).split()[0]
 
-            coordinates = addrCoords(street, houseno, postcode)
+            coordinates = address_coords(street, houseno, postcode)
 
             # Assign the values to a dictionary
             props['address'].append(str(street + ' ' + houseno + ' ' +
@@ -123,7 +123,7 @@ def getPrices(firstYear, lastYear, propType):
     return props
 
 
-def avgPrices(prices):
+def avg_prices(prices):
     """ Find the average price per square metre for properties inside areas of
     a pre-defined size (1 km^2).
     """
@@ -135,19 +135,19 @@ while True:
         startYear = int(input("Starting year: "))
     except ValueError:
         # User did not enter a valid year
-        print("Please enter a year between 1992 and " + str(currentYear) + ".")
+        print("Please enter a year between 1992 and " + str(CURRENT_YEAR) + ".")
         # Back to start
         continue
-    if startYear < 1992 or startYear > currentYear:
+    if startYear < 1992 or startYear > CURRENT_YEAR:
         # There are no data before 1992 or for the future
-        print("Please enter a year between 1992 and " + str(currentYear) + ".")
+        print("Please enter a year between 1992 and " + str(CURRENT_YEAR) + ".")
         # Back to start
         continue
     else:
         # Success
         break
 
-if startYear == currentYear:
+if startYear == CURRENT_YEAR:
     endYear = 'today'
 else:
     while True:
@@ -162,13 +162,13 @@ else:
         except ValueError:
             # Not an integer, back to start
             print("Please enter a year between " + str(startYear+1) + " and " +
-                  currentYear + ".")
+                  CURRENT_YEAR + ".")
             continue
         if int(endYear) <= startYear:
             print("End year must be greater than starting year (" +
                   str(startYear) + ").")
             continue
-        elif int(endYear) > currentYear:
+        elif int(endYear) > CURRENT_YEAR:
             # Assume user wants all data until today
             print("Future date given, assuming today.")
             endYear = 'today'
