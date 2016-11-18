@@ -3,8 +3,6 @@
 period of time and prepare for plotting on a map with R.
 """
 
-# Plotting should be done with Vega-Lite and Altair.
-
 import requests
 import bs4
 import datetime
